@@ -1,0 +1,92 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import kagglehub
+import os
+path = kagglehub.dataset_download("bitext/bitext-gen-ai-chatbot-customer-support-dataset")
+files = os.listdir(path)
+print("Files in dataset:", files)
+
+csv_files = [f for f in files if f.endswith(".csv")]
+if csv_files:
+    df = pd.read_csv(os.path.join(path, csv_files[0]))  # Load the first CSV file
+    print(df.head())
+else:
+    print("No CSV files found in the dataset.")
+    df.info()
+    df.describe()
+df.isnull().sum()
+plt.figure(figsize=(10, 6))
+sns.countplot(data=df, x='category')
+plt.xticks(rotation=90)
+plt.title("Distribution of Category")
+plt.show()
+plt.figure(figsize=(10, 6))
+sns.countplot(data=df, x='intent')
+plt.xticks(rotation=90)
+plt.title("Distribution of Intent")
+plt.show()
+df['response_length'] = df['response'].apply(len)
+plt.figure(figsize=(10, 6))
+sns.histplot(df['response_length'], bins=50)
+plt.title("Distribution of Response Lengths")
+plt.show()
+plt.figure(figsize=(10, 6))
+sns.countplot(data=df, x='intent')
+plt.xticks(rotation=90)
+plt.title("Distribution of Intent")
+plt.show()
+# Group by intent and calculate summary statistics
+intent_length_stats = df.groupby('intent')['response_length'].agg(['mean', 'min', 'max', 'median', 'std'])
+
+# Display the results
+intent_length_stats
+plt.figure(figsize=(12, 6))
+sns.boxplot(data=df, x='intent', y='response_length')
+plt.xticks(rotation=90)
+plt.title("Response Length Distribution by Intent")
+plt.xlabel("Intent")
+plt.ylabel("Response Length")
+plt.show()
+category_length_stats = df.groupby('category')['response_length'].agg(['mean', 'min', 'max', 'median', 'std'])
+category_length_stats
+
+plt.figure(figsize=(12, 6))
+sns.boxplot(data=df, x='category', y='response_length')
+plt.xticks(rotation=90)
+plt.title("Response Length Distribution by Category")
+plt.xlabel("Category")
+plt.ylabel("Response Length")
+plt.show()
+from textblob import TextBlob
+import nltk
+nltk.download('punkt')
+def get_polarity(text):
+    return TextBlob(str(text)).sentiment.polarity  # Convert to string to handle NaN values
+
+df["response_polarity"] = df["response"].apply(get_polarity)
+category_sentiment = df.groupby("category")["response_polarity"].mean().reset_index() #moved this outside the function scope
+category_sentiment
+intent_sentiment = df.groupby("intent")["response_polarity"].mean().reset_index()
+intent_sentiment
+plt.figure(figsize=(12,6))
+sns.histplot(df["response_polarity"], bins=30, kde=True)
+plt.title("Distribution of Response Polarity")
+plt.xlabel("Polarity Score")
+plt.ylabel("Frequency")
+plt.show()
+category_polarity = df.groupby("category")["response_polarity"].describe()
+category_polarity
+intent_polarity = df.groupby("intent")["response_polarity"].describe()
+intent_polarity
+plt.figure(figsize=(12, 6))
+sns.boxplot(x="category", y="response_polarity", data=df)
+plt.xticks(rotation=90)  # Rotate x-axis labels
+plt.title("Polarity Distribution by Category")
+plt.show()
+plt.figure(figsize=(12, 6))
+sns.boxplot(x="intent", y="response_polarity", data=df)
+plt.xticks(rotation=90)
+plt.title("Polarity Distribution by Intent")
+plt.show()
